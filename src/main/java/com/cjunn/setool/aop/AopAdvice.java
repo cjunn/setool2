@@ -2,11 +2,14 @@ package com.cjunn.setool.aop;
 
 import com.cjunn.setool.aop.filter.AopFilter;
 import com.cjunn.setool.aop.filter.AopFilterChain;
+import com.cjunn.setool.dao.IdMaker;
 import com.cjunn.setool.utils.AnnoUtils;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
@@ -17,7 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 
 public class AopAdvice implements MethodInterceptor {
-    protected Log log = LogFactory.getLog(this.getClass());
+    public static final Logger LOGGER = LoggerFactory.getLogger(AopAdvice.class);
     private static final Map<Object,List<AopFilter>> AOP_FILTERS_CACHE = new ConcurrentHashMap<>();
 
 
@@ -62,8 +65,7 @@ public class AopAdvice implements MethodInterceptor {
                 aopFilters.add(new AopFilter(aop.handler().newInstance()));
             }
         } catch (Exception e) {
-            e.printStackTrace();
-            log.error(e);
+            LOGGER.error("aops2AopFilter",e);
             throw new IllegalStateException(e);
         }
         return aopFilters;

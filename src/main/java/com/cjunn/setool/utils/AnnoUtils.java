@@ -1,11 +1,15 @@
 package com.cjunn.setool.utils;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
 public class AnnoUtils {
+    public static List<? extends Annotation> lookupAnnoFromField(Field field, Class<? extends Annotation> anno){
+        return lookupAnnoFromArray(field.getDeclaredAnnotations(),anno);
+    }
     public static List<? extends Annotation> lookupAnnoFromMethod(Method method, Class<? extends Annotation> anno){
         return lookupAnnoFromArray(method.getDeclaredAnnotations(),anno);
     }

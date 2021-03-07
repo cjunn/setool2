@@ -1,0 +1,16 @@
+setool:
+  dao:
+    executor:
+      jdbcTemplateName: jdbcTemplate
+  snowflake:
+    node:
+      type: property
+    nodenum: 0
+
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/sys?characterEncoding=utf8&useSSL=false&useUnicode=true
+    username: root
+    password: root
+    driver-class-name: com.mysql.jdbc.Driver
+    type: com.alibaba.druid.pool.DruidDataSource
