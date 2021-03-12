@@ -4,10 +4,13 @@ import com.alibaba.druid.filter.FilterChain;
 import com.alibaba.druid.filter.FilterEventAdapter;
 import com.alibaba.druid.proxy.jdbc.*;
 import com.alibaba.druid.sql.SQLUtils;
+import com.cjunn.setool.aop.handler.TakeTimeLogHandler;
 import com.cjunn.setool.core.monitor.IUserMonitorGetter;
 import com.cjunn.setool.core.monitor.UserMonitor;
 import com.cjunn.setool.core.monitor.UserMonitorFactory;
 import com.cjunn.setool.core.monitor.sql.SQLInfo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -21,8 +24,9 @@ import java.util.List;
  * @Version
  */
 public class ExecuteSqlMonitorFilter extends FilterEventAdapter implements IUserMonitorGetter<SQLInfo> {
+    public static final Logger      LOGGER                      =   LoggerFactory.getLogger(ExecuteSqlMonitorFilter.class);
     private UserMonitor<SQLInfo>    monitor                     =   UserMonitorFactory.getUserMonitor(ExecuteSqlMonitorFilter.class);
-    private SQLUtils.FormatOption   statementSqlFormatOption   =   new SQLUtils.FormatOption(false, true);
+    private SQLUtils.FormatOption   statementSqlFormatOption    =   new SQLUtils.FormatOption(false, false);
     private String transaId(StatementProxy statement){
         TransactionInfo transactionInfo = statement.getConnectionProxy().getTransactionInfo();
         if(transactionInfo==null){
@@ -65,15 +69,18 @@ public class ExecuteSqlMonitorFilter extends FilterEventAdapter implements IUser
         long lastExecuteStartNano = statement.getLastExecuteStartNano();
         statement.setLastExecuteTimeNano();
         long lastExecuteTimeNano = statement.getLastExecuteTimeNano();
-        monitor.addMonitorInfo(
-                SQLInfo.of(
-                        conneId(statement),
-                        stmtId(statement),
-                        transaId(statement),
-                        formatSQL(statement, sql),
-                        statement.getLastExecuteType().toString(),
-                        lastExecuteTimeNano,
-                        lastExecuteStartNano));
+        SQLInfo of = SQLInfo.of(
+                conneId(statement),
+                stmtId(statement),
+                transaId(statement),
+                formatSQL(statement, sql),
+                statement.getLastExecuteType().toString(),
+                lastExecuteTimeNano,
+                lastExecuteStartNano);
+        if(LOGGER.isDebugEnabled()){
+            LOGGER.debug(of.toString());
+        }
+        monitor.addMonitorInfo(of);
     }
 
     @Override

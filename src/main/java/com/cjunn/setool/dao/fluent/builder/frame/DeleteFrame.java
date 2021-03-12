@@ -1,5 +1,7 @@
 package com.cjunn.setool.dao.fluent.builder.frame;
 
+import com.cjunn.setool.core.model.BaseModel;
+
 /**
  * @ClassName DeleteFrame
  * @Description TODO
@@ -7,7 +9,7 @@ package com.cjunn.setool.dao.fluent.builder.frame;
  * @Date 2021/3/11 14:38
  * @Version
  */
-public class DeleteFrame extends AbstractOptFrame<TableFrame> {
+public class DeleteFrame<T extends BaseModel> extends AbstractOptFrame<TableFrame> {
 
     public DeleteFrame(TableFrame topFrame) {
         super(topFrame);

@@ -6,8 +6,6 @@ import com.cjunn.setool.core.model.HandlerType;
 import com.cjunn.setool.core.model.JpaAnnoModeInfo;
 import com.cjunn.setool.dao.IdMaker;
 import com.cjunn.setool.dao.mybatis.mapper.BaseMapperUtils;
-import com.cjunn.setool.dao.fluent.ISQLGenerator;
-import com.cjunn.setool.dao.fluent.MysqlSQLGenerator;
 import com.cjunn.setool.utils.Reflections;
 import org.apache.ibatis.builder.annotation.ProviderContext;
 

@@ -12,7 +12,25 @@ public class SQLInfo {
     private String statementId;
     private String transactionId;
     private String executeSqlText;
+
+    @Override
+    public String toString() {
+        return "SQLInfo{" +
+                "connectionId='" + connectionId + '\'' +
+                ", statementId='" + statementId + '\'' +
+                ", transactionId='" + transactionId + '\'' +
+                ", executeSqlText='" + executeSqlText + '\'' +
+                ", executeType='" + executeType + '\'' +
+                ", executeTimeNano=" + executeTimeNano +
+                ", executeStartNano=" + executeStartNano +
+                '}';
+    }
+
     private String executeType;
+    private Long executeTimeNano;
+    private Long executeStartNano;
+
+
 
     public static SQLInfo of(String connectionId,
                              String statementId,
@@ -47,8 +65,13 @@ public class SQLInfo {
         this.executeType=executeType;
     }
 
-    private Long executeTimeNano;
-    private Long executeStartNano;
+    public String getExecuteType() {
+        return executeType;
+    }
+
+    public void setExecuteType(String executeType) {
+        this.executeType = executeType;
+    }
 
 
     public String getConnectionId() {

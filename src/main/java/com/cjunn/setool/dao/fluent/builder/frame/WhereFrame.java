@@ -1,5 +1,6 @@
 package com.cjunn.setool.dao.fluent.builder.frame;
 
+import com.cjunn.setool.core.model.BaseModel;
 import com.cjunn.setool.dao.fluent.builder.*;
 import com.cjunn.setool.dao.fluent.builder.ql.WhereExps;
 
@@ -10,7 +11,8 @@ import com.cjunn.setool.dao.fluent.builder.ql.WhereExps;
  * @Date 2021/3/11 14:23
  * @Version
  */
-public class WhereFrame extends AbstractOptFrame<TableFrame> implements SelectFrameProvider{
+public class WhereFrame<T extends BaseModel> extends AbstractOptFrame<TableFrame>
+                                                                        {
     private static final String AND = "AND";
     private static final String OR = "OR";
     private String lineNowType;
@@ -22,7 +24,7 @@ public class WhereFrame extends AbstractOptFrame<TableFrame> implements SelectFr
         super(topFrame);
     }
 
-    public void packExps(){
+    private void packExps(){
         if(lineLastBiExps==null){
             return ;
         }
@@ -36,18 +38,17 @@ public class WhereFrame extends AbstractOptFrame<TableFrame> implements SelectFr
         return ;
     }
 
-    public AndOrFrame and(){
+    public AndOrFrame<T> and(){
         this.lineNowType=AND;
-
-        AndOrFrame andOrFrame = new AndOrFrame(lineLastBiExps = new RightBiExps(), this, topFrame());
+        AndOrFrame andOrFrame = new AndOrFrame<T>(lineLastBiExps = new RightBiExps(), this, topFrame());
         packExps();
         return andOrFrame;
 
     }
-    public AndOrFrame or(){
+    public AndOrFrame<T> or(){
         this.lineNowType=OR;
         packExps();
-        return new AndOrFrame(lineLastBiExps=new RightBiExps(),this,topFrame());
+        return new AndOrFrame<T>(lineLastBiExps=new RightBiExps(),this,topFrame());
     }
 
     @Override

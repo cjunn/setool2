@@ -1,5 +1,6 @@
 package com.cjunn.setool.dao.fluent.builder.frame;
 
+import com.cjunn.setool.core.model.BaseModel;
 import com.cjunn.setool.dao.fluent.builder.*;
 import com.cjunn.setool.dao.fluent.builder.ext.GroupByExps;
 import com.cjunn.setool.dao.fluent.builder.ext.HavingExps;
@@ -18,7 +19,8 @@ import java.util.stream.Collectors;
  * @Date 2021/3/11 14:29
  * @Version
  */
-public class ExtFrame extends AbstractOptFrame<TableFrame> implements ActuatorProvider {
+public class ExtFrame<T extends BaseModel> extends AbstractOptFrame<TableFrame>
+                                                                            implements ActuatorProvider<T> {
     private RightBiExps topExps=new RightBiExps();
     private GroupByExps groupByExps;
     private RightBiExps havingInnCdtExps;
@@ -78,4 +80,9 @@ public class ExtFrame extends AbstractOptFrame<TableFrame> implements ActuatorPr
         return this;
     }
 
+    public ExtFrame limitOne() {
+        pagingExps = pagingExps==null?new PagingExps():pagingExps;
+        pagingExps.setLimitOne(true);
+        return this;
+    }
 }

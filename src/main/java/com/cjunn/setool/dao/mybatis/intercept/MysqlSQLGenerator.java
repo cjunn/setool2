@@ -1,4 +1,4 @@
-package com.cjunn.setool.dao.fluent;
+package com.cjunn.setool.dao.mybatis.intercept;
 
 import com.cjunn.setool.core.model.BaseModel;
 import com.cjunn.setool.core.model.JpaAnnoModeInfo;

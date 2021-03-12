@@ -1,6 +1,8 @@
 package com.cjunn.setool.dao.fluent.support;
 
+import com.cjunn.setool.core.model.BaseModel;
 import com.cjunn.setool.dao.fluent.builder.frame.TableFrame;
+import com.cjunn.setool.test.TestMode;
 
 /**
  * @ClassName AbstractFluentSupport
@@ -11,7 +13,7 @@ import com.cjunn.setool.dao.fluent.builder.frame.TableFrame;
  */
 public abstract class AbstractFluentSupport implements IFluentSupport {
     @Override
-    public TableFrame table(Class<?> clz) {
+    public <T extends BaseModel> TableFrame<T> table(Class<T> clz) {
         return new TableFrame(clz,this);
     }
 }
