@@ -4,8 +4,12 @@ setool:
       jdbcTemplateName: jdbcTemplate
   snowflake:
     node:
-      type: property
+      type : property
     nodenum: 0
+  monitor :
+    druid :
+      usersql : true
+
 
 spring:
   datasource:
@@ -13,4 +17,3 @@ spring:
     username: root
     password: root
     driver-class-name: com.mysql.jdbc.Driver
-    type: com.alibaba.druid.pool.DruidDataSource

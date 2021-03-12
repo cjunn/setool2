@@ -6,10 +6,11 @@ import com.cjunn.setool.core.model.JpaAnnoModeInfo;
 import com.cjunn.setool.dao.IdMaker;
 import com.cjunn.setool.dao.exception.OptimisticLockingException;
 import com.cjunn.setool.dao.executor.AbstractBatchExecutor;
+import com.cjunn.setool.dao.fluent.ISQLGenerator;
+import com.cjunn.setool.dao.fluent.MysqlSQLGenerator;
 import com.cjunn.setool.utils.Predicates2;
 import com.cjunn.setool.utils.Reflections;
 import com.google.common.base.Function;
-import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import com.google.common.collect.Iterables;
@@ -17,7 +18,6 @@ import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -107,38 +107,12 @@ public class MySqlBatchExecutor<T extends BaseModel> extends AbstractBatchExecut
     private  enum ExecuteAction {
         SAVE {
             <T extends BaseModel> String makeSql(Iterable<T> records, JpaAnnoModeInfo modelInfo) {
-                MySqlBatchExecutor.LOGGER.debug("invoke make save sql.");
-                int recordCount = Iterables.size(records);
-                StringBuilder sqlBuilder = new StringBuilder();
-                String insertHead = this.makeInsertHead(modelInfo);
-                sqlBuilder.append(insertHead);
-                String insertRecordString = this.makeInsertRecordString(modelInfo);
-                String insertBody = joinSameString(recordCount, insertRecordString, ",");
-                sqlBuilder.append(insertBody);
-                return sqlBuilder.toString();
-            }
-        },
-        SAVE_OR_UPDATE {
-            <T extends BaseModel> String makeSql(Iterable<T> records, JpaAnnoModeInfo modelInfo) {
-                String updateBody = this.makeUpdateBody(modelInfo.getAllColumnNamesWithoutPk());
-                return SAVE.makeSql(records, modelInfo) + updateBody;
+                return sqlGenerator.makeSaveSql(Iterables.size(records),modelInfo,(i)->"?");
             }
         },
         UPDATE {
             <T extends BaseModel> String makeSql(Iterable<T> records, final JpaAnnoModeInfo modelInfo) {
-                StringBuilder sqlBuilder = new StringBuilder("UPDATE ");
-                sqlBuilder.append(modelInfo.getTableName()).append(" SET ");
-                Iterable<String> tokens = Iterables.transform(
-                        modelInfo.getAllColumnNamesWithoutPk(),
-                        colName -> modelInfo.isVersionColumnName(colName) ? modelInfo.getVersionColumnName() + "=" + modelInfo.getVersionColumnName() + "+1" : colName.concat("=?")
-                );
-                Joiner.on(',').appendTo(sqlBuilder, tokens);
-                sqlBuilder.append(" WHERE ").append(modelInfo.getPkColumnName()).append(" = ?");
-                if (modelInfo.hasVersionField()) {
-                    sqlBuilder.append(" and ").append(modelInfo.getVersionColumnName()).append(" = ?");
-                }
-
-                return sqlBuilder.toString();
+                return sqlGenerator.makeUpdateSql(modelInfo,(i)->"?");
             }
 
             public <T extends BaseModel> int invoke(MySqlBatchExecutor.ExecuteParams<T> executeParams) {
@@ -196,11 +170,10 @@ public class MySqlBatchExecutor<T extends BaseModel> extends AbstractBatchExecut
         private ExecuteAction() {
         }
 
+        protected ISQLGenerator sqlGenerator=new MysqlSQLGenerator();
+
         abstract <T extends BaseModel> String makeSql(Iterable<T> ite, JpaAnnoModeInfo jpaAnnoModeInfo);
 
-        protected String makeInsertHead(JpaAnnoModeInfo modelInfo) {
-            return "INSERT INTO " + modelInfo.getTableName() + " (" + Joiner.on(',').join(modelInfo.getAllColumnNames()) + ") VALUES ";
-        }
 
         public <T extends BaseModel> int invoke(MySqlBatchExecutor.ExecuteParams<T> executeParams) {
             if (Iterables.isEmpty(executeParams.getModelInfo().getAllFieldNames())) {
@@ -214,23 +187,19 @@ public class MySqlBatchExecutor<T extends BaseModel> extends AbstractBatchExecut
                 Iterable<List<T>> pages = Iterables.partition(source, BATCH_LIMIT);
                 Function<T, Iterable<Object>> recordToUpdateArgsTransformer = this.recordToUpdateArgsTransformer(executeParams);
                 Iterator<List<T>> iterator = pages.iterator();
-
                 while(iterator.hasNext()) {
                     List<T> page = iterator.next();
                     if (MySqlBatchExecutor.LOGGER.isDebugEnabled()) {
                         MySqlBatchExecutor.LOGGER.debug("executing batch, this page size is {}", page.size());
                     }
-
                     if (page.size() != prevBatchCount) {
                         sql = this.makeSql(page, modelInfo);
                         prevBatchCount = page.size();
                     }
-
                     Object[] updateArgArray = this.transformSourceToUpdateArgArray(page, recordToUpdateArgsTransformer);
                     rsCount += executeParams.jdbcTemplate.update(sql, updateArgArray);
                     MySqlBatchExecutor.plusVersionIfRequired(executeParams, this);
                 }
-
                 return rsCount;
             }
         }
@@ -261,33 +230,6 @@ public class MySqlBatchExecutor<T extends BaseModel> extends AbstractBatchExecut
         private <T extends BaseModel> Object[] transformSourceToUpdateArgArray(Iterable<T> source, Function<T, Iterable<Object>> recordToUpdateArgsTransformer) {
             return Iterables.toArray(Iterables.concat(Iterables.transform(source, recordToUpdateArgsTransformer)), Object.class);
         }
-
-        protected String makeInsertRecordString(final JpaAnnoModeInfo modelInfo) {
-            Iterable<String> placeHolders = Iterables.transform(
-                    modelInfo.getAllColumnNames(),
-                    columnName -> modelInfo.hasVersionField() && modelInfo.getVersionColumnName().equals(columnName) ? "0" : "?"
-            );
-            return "(" + Joiner.on(',').join(placeHolders) + ")";
-        }
-
-        protected String makeUpdateBody(Iterable<String> allColumnNamesWithoutPk) {
-            StringBuilder updateBody = new StringBuilder(" ON DUPLICATE KEY UPDATE ");
-            Iterable<String> updateFieldTokens = Iterables.transform(
-                    allColumnNamesWithoutPk,
-                    columnName -> columnName.concat("=VALUES(").concat(columnName).concat(")")
-            );
-            Joiner.on(',').appendTo(updateBody, updateFieldTokens);
-            return updateBody.toString();
-        }
-
-        protected static String joinSameString(int joinAmount, CharSequence joinString, CharSequence splitter) {
-            StringBuilder resultBuilder = new StringBuilder(joinString);
-            for(int i = 1; i < joinAmount; ++i) {
-                resultBuilder.append(splitter).append(joinString);
-            }
-            return resultBuilder.toString();
-        }
-
         private static Iterable<String> getAllFieldNameWithoutPkAndVersion(JpaAnnoModeInfo modelInfo) {
             Iterable<String> allFieldNamesWithoutPk = modelInfo.getAllFieldNamesWithoutPk();
             return modelInfo.hasVersionField()

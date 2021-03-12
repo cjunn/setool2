@@ -18,15 +18,8 @@ public abstract class AbstractBatchExecutor<T extends BaseModel> implements Batc
     protected JpaAnnoModeInfo modelInfo;
 
 
-    protected  <T extends BaseModel> void doFieldHandler(Iterable<T> source, HandlerType handlerType) {
-        if (!Iterables.isEmpty(source)) {
-            Class<? extends BaseModel> entityClazz = ((BaseModel)source.iterator().next()).getClass();
-            HandlerAnnoModelInfo hami = HandlerAnnoModelInfo.of(entityClazz);
-            Iterator<T> iterator = source.iterator();
-            while(iterator.hasNext()) {
-                hami.doHandler(handlerType, iterator.next());
-            }
-        }
+    protected <T extends BaseModel> void doFieldHandler(Iterable<T> source, HandlerType handlerType) {
+        HandlerAnnoModelInfo.doFieldHandler(source,handlerType);
     }
 
 

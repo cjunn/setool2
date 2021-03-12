@@ -38,8 +38,25 @@ public class JpaAnnoModeInfo {
     private String entityName;
     private Pair<String, String> tableNameEntityNamePair;
     private Pair<String, String> pkColumnNameFieldNamePair;
+
+    public Pair<String, String> getVersionColumnNameFieldNamePair() {
+        return versionColumnNameFieldNamePair;
+    }
+
+
+
     private Pair<String, String> versionColumnNameFieldNamePair;
+
+
+
     private Iterable<Pair<String, String>> columnNameFieldNamePairs;
+
+    public Iterable<Pair<String, String>> getColumnNameFieldNamePairsWithoutPk() {
+        return columnNameFieldNamePairsWithoutPk;
+    }
+
+
+
     private Iterable<Pair<String, String>> columnNameFieldNamePairsWithoutPk;
     private ImmutableBiMap<String, String> allColumnNameFieldNameMap;
 
@@ -242,6 +259,9 @@ public class JpaAnnoModeInfo {
     }
 
 
+    public Iterable<Pair<String, String>> getColumnNameFieldNamePairs() {
+        return columnNameFieldNamePairs;
+    }
 
     public boolean hasVersionField() {
         return this.versionColumnNameFieldNamePair != null;

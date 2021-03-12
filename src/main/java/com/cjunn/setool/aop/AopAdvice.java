@@ -40,14 +40,13 @@ public class AopAdvice implements MethodInterceptor {
     }
 
     public AopFilterChain obj2AopFile(Object obj){
-        List<AopFilter> aopFilters = AOP_FILTERS_CACHE.get(obj);
-        if(aopFilters==null){
+        List<AopFilter> aopFilters = AOP_FILTERS_CACHE.computeIfAbsent(obj,(o)->{
             List<? extends Annotation> annotations =
-                    (obj instanceof Method) ?
-                            AnnoUtils.lookupAnnoFromMethod((Method) obj, Aop.class) :
-                            AnnoUtils.lookupAnnoFromClz((Class) obj, Aop.class);
-            aopFilters = aops2AopFilter((List<Aop>)annotations);
-        }
+                    (o instanceof Method) ?
+                            AnnoUtils.lookupAnnoFromMethod((Method) o, Aop.class) :
+                            AnnoUtils.lookupAnnoFromClz((Class) o, Aop.class);
+           return  aops2AopFilter((List<Aop>)annotations);
+        });
         if(aopFilters!=null&&aopFilters.size()>0){
             return aopFilter2AopChain(aopFilters);
         }

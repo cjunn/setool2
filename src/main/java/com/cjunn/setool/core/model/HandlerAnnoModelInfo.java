@@ -1,47 +1,54 @@
 package com.cjunn.setool.core.model;
 
-import com.cjunn.setool.core.util.ContextHolder;
 import com.cjunn.setool.utils.AnnoUtils;
-import com.cjunn.setool.utils.Predicates2;
 import com.cjunn.setool.utils.Reflections;
 import com.google.common.collect.Iterables;
 import org.apache.commons.lang3.reflect.FieldUtils;
-import org.springframework.util.CollectionUtils;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class HandlerAnnoModelInfo {
-    private Map<Class<?>,Iterable<HandlerAnnoModelInfo.HandlerAnnoField>> CLZ_HANDLER_CAHCE=new ConcurrentHashMap<>();
+    private final static Map<Class<?>,Iterable<HandlerAnnoModelInfo.HandlerAnnoField>> CLZ_HANDLER_CAHCE=new ConcurrentHashMap<>();
     private final Iterable<HandlerAnnoModelInfo.HandlerAnnoField> handlerAnnotatedFields;
+
+    public static  <T extends BaseModel> void doFieldHandler(Iterable<T> source, HandlerType handlerType) {
+        if (!Iterables.isEmpty(source)) {
+            Class<? extends BaseModel> entityClazz = ((BaseModel)source.iterator().next()).getClass();
+            HandlerAnnoModelInfo hami = HandlerAnnoModelInfo.of(entityClazz);
+            Iterator<T> iterator = source.iterator();
+            while(iterator.hasNext()) {
+                hami.doHandler(handlerType, iterator.next());
+            }
+        }
+    }
 
     public HandlerAnnoModelInfo(Class<?> entityClazz) {
         this.handlerAnnotatedFields = this.searchHandlerAnnotatedFields(entityClazz);
     }
     private Iterable<HandlerAnnoModelInfo.HandlerAnnoField> searchHandlerAnnotatedFields(Class<?> entityClazz) {
-        Iterable<HandlerAnnoModelInfo.HandlerAnnoField> iterable = CLZ_HANDLER_CAHCE.get(entityClazz);
-        if(iterable!=null){
-            return iterable;
-        }
-        try{
-            List<Field> allFields = FieldUtils.getAllFieldsList(entityClazz);
+        return CLZ_HANDLER_CAHCE.computeIfAbsent(entityClazz,(clz)->{
             List<HandlerAnnoModelInfo.HandlerAnnoField> infos=new ArrayList<>();
-            for(Field field:allFields){
-                List<Handler> handlers = (List<Handler>) AnnoUtils.lookupAnnoFromField(field, Handler.class);
-                if(handlers==null||handlers.size()==0){
-                    continue;
+            try{
+                List<Field> allFields = FieldUtils.getAllFieldsList(clz);
+                for(Field field:allFields){
+                    List<Handler> handlers = (List<Handler>) AnnoUtils.lookupAnnoFromField(field, Handler.class);
+                    if(handlers==null||handlers.size()==0){
+                        continue;
+                    }
+                    Class<? extends IHandler> iHandlerClz = handlers.get(0).value();
+                    IHandler iHandler = iHandlerClz.newInstance();
+                    infos.add(new HandlerAnnoModelInfo.HandlerAnnoField(field,iHandler));
                 }
-                Class<? extends IHandler> iHandlerClz = handlers.get(0).value();
-                IHandler iHandler = iHandlerClz.newInstance();
-                infos.add(new HandlerAnnoModelInfo.HandlerAnnoField(field,iHandler));
+            }catch (Exception ex){
+                throw new IllegalStateException(ex);
             }
-            CLZ_HANDLER_CAHCE.put(entityClazz,infos);
-        }catch (Exception ex){
-            throw new IllegalStateException(ex);
-        }
-        return CLZ_HANDLER_CAHCE.get(entityClazz);
+            return infos;
+        });
     }
 
 
